@@ -32,18 +32,29 @@
         </box>
         <box>
             <template slot="title">
-            Details
+                <div class="flex flex-row justify-between">
+                    <span>Details</span>
+                </div>
             </template>
             <template slot="content">
                 <p class="text-xl"><span class="font-semibold">Titel:</span> {{ selectedKolloquium }}</p>
-                <p class="font-semibold mt-4">Abgaben:</p>
+                <p class="font-semibold mt-4 mb-1">Abgaben:</p>
                 <AbgabeItem
                     v-for="abgabe in abgaben"
                     :key="abgabe"
                     @click.native="selectAbgabe(abgabe)"
                     :title="abgabe"
                 />
-                <button class="border rounded mt-4 p-2 font-semibold text-white bg-green-500 hover:bg-green-600 focus:bg-green-700">Aktivieren</button>
+                <div class="flex flex-row justify-between">
+                    <button class="border rounded mt-4 p-2 font-semibold text-white bg-green-500 hover:bg-green-600 focus:bg-green-700">
+                        Aktivieren
+                    </button>
+                    <n-link to="/abgabe-hochladen">
+                        <button class="border rounded mt-4 p-2 font-semibold text-white bg-blue-500 hover:bg-blue-600 focus:bg-blue-700">
+                            Link Teilen
+                        </button>
+                    </n-link>
+                </div>
             </template>
         </box>
     </div>

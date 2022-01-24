@@ -8,9 +8,6 @@
             </div>
             <input v-if="inEdit" class="w-full rounded border p-1" v-model="title" placeholder="Neues Kolloquium...">
             <button
-                v-if="!inEdit"
-                class="text-center text-white rounded-md select-none w-9 h-8 ml-1 bg-blue-500 hover:bg-blue-700 active:bg-blue-900 pb-1">&#9993;</button>
-            <button
                 v-if="inEdit"
                 @click="save()"
                 class="text-center text-white rounded-md select-none w-9 h-8 ml-1 bg-green-500 hover:bg-green-700 active:bg-green-900">✓</button>
