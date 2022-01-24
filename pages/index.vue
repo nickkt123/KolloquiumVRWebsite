@@ -1,7 +1,5 @@
 <template>
-    <div
-        class="relative flex flex-col items-center justify-top min-h-screen bg-gray-100 sm:items-top sm:pt-0"
-    >
+    <div class="relative flex flex-col items-center justify-top min-h-screen bg-gray-100 sm:items-top sm:pt-0">
         <box>
             <template slot="title">
                 KolloquiumVR Control Panel
@@ -21,7 +19,10 @@
                     @click.native="selectKolloquium(kolloquium)"
                     :selected="selectedKolloquium===kolloquium.title"
                     :title="kolloquium.title"
+                    @update:title="kolloquium.title=$event"
                     :inEdit="kolloquium.inEdit"
+                    @update:inEdit="toggleEdit(kolloquium, $event)"
+                    @deleteKolloquium="deleteKolloquium(kolloquium)"
                 />
                 <ListItem
                     @click.native="createNewKolloquium()"
@@ -45,7 +46,6 @@
                 <button class="border rounded mt-4 p-2 font-semibold text-white bg-green-500 hover:bg-green-600 focus:bg-green-700">Aktivieren</button>
             </template>
         </box>
-        {{ kolloquiums }}
     </div>
 </template>
 
@@ -105,6 +105,15 @@ export default {
             this.kolloquiums = this.kolloquiums.filter(kolloquium => kolloquium.title.length > 0);
             this.kolloquiums = [...this.kolloquiums, {title: '', inEdit: true}];
 
+        },
+        toggleEdit(kolloquium, status) {
+            this.kolloquiums.forEach(kolloquium => {
+                kolloquium.inEdit = false;
+            });
+            kolloquium.inEdit = status;
+        },
+        deleteKolloquium(kolloquiumToDelete) {
+            this.kolloquiums = this.kolloquiums.filter(kolloquium => kolloquium.title != kolloquiumToDelete.title);
         }
     }
 }

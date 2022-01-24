@@ -3,7 +3,7 @@
         :selected="selected"
     >
         <div class="flex flex-row w-full">
-            <div v-if="!inEdit" class="w-full select-none text-left mr-1">
+            <div class="w-full select-none text-left mr-1">
                 {{ title }}
             </div>
             <button
