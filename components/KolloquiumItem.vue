@@ -58,11 +58,11 @@ export default {
     },
     methods: {
         save() {
-            this.$emit("update:inEdit", false);
-            this.$emit("update:title", this.title);
+            this.$emit("update:inEdit", {inEdit: false, title: this.title});
+            // this.$emit("update:title", this.title); // done in update:inEdit
         },
         edit() {
-            this.$emit("update:inEdit", true);
+            this.$emit("update:inEdit", {inEdit: true, title: this.title});
         },
         deleteMe() {
             this.$emit("deleteKolloquium")

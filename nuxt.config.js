@@ -1,4 +1,3 @@
-
 export default {
   // Nuxt target see https://nuxtjs.org/api/configuration-target
   target: 'server',

@@ -1,16 +1,21 @@
 const express = require('express')
-
+var bodyParser = require('body-parser')
 // Create express instance
 const app = express()
 
 // Require API routes
 const users = require('./routes/users')
-const test = require('./routes/kolloquiums')
+const kolloquiums = require('./routes/kolloquiums')
 
 // Import API Routes
+
+// parse application/x-www-form-urlencoded
+app.use(bodyParser.urlencoded({ extended: false }))
+// parse application/json
+app.use(bodyParser.json())
+
 app.use(users)
 app.use(kolloquiums)
-
 // Export express app
 module.exports = app
 

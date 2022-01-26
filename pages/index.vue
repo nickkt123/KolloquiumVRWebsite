@@ -98,21 +98,44 @@ export default {
             });
             this.selectedKolloquium = "";
             this.kolloquiums = this.kolloquiums.filter(kolloquium => kolloquium.title.length > 0);
-            this.kolloquiums = [...this.kolloquiums, {title: '', inEdit: true}];
-
+            this.kolloquiums = [...this.kolloquiums, {title: '', inEdit: true, isNew: true}];
         },
-        toggleEdit(kolloquium, status) {
+        toggleEdit(kolloquium, {inEdit, title}) {
+            let createNew = kolloquium.inEdit && kolloquium.isNew;
+            let changeName = kolloquium.inEdit && !kolloquium.isNew;
+
             this.kolloquiums.forEach(kolloquium => {
                 kolloquium.inEdit = false;
             });
-            kolloquium.inEdit = status;
+            kolloquium.inEdit = inEdit;
+
+            if(createNew){
+                kolloquium.title = title
+                kolloquium.isNew = false
+                if (!title || title == '') {
+                    this.deleteKolloquium(title)
+                    return
+                }
+                this.$axios.post('api/createKolloquium', { title: title })
+            }
+            else if (changeName) {
+                if (title == '') {
+                    return
+                }
+                kolloquium.title = title
+                this.$axios.post('api/renameKolloquium', { oldTitle: kolloquium.title, newTitle: title})
+            }
         },
         deleteKolloquium(kolloquiumToDelete) {
             this.kolloquiums = this.kolloquiums.filter(kolloquium => kolloquium.title != kolloquiumToDelete.title);
+            this.selectedKolloquium = ""
+            if(kolloquiumToDelete != ''){
+                this.$axios.post('api/deleteKolloquium', { title: kolloquiumToDelete.title })
+            }
         },
     },
     async asyncData ({ $http }) {
-        const data = await $http.$get('/api/kolloquiums/getKolloquiums')
+        const data = await $http.$get('/api/getKolloquiums/')
         let kolloquiumList = []
         data.kolloquiums.forEach(title => {
             kolloquiumList.push({
