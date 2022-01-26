@@ -4,9 +4,9 @@
         <h2 class="text-xl leading-4">
             <slot name="title"></slot>
         </h2>
-        <p class="mt-3 text-gray-600">
+        <div class="mt-3 text-gray-600">
             <slot name="content"></slot>
-        </p>
+        </div>
         </div>
     </div>
 </template>

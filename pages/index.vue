@@ -45,7 +45,7 @@
                     @click.native="selectAbgabe(abgabe)"
                     :title="abgabe"
                 />
-                <div class="flex flex-row justify-between">
+                <div class="flex flex-row justify-between"> 
                     <button class="border rounded mt-4 p-2 font-semibold text-white bg-green-500 hover:bg-green-600 focus:bg-green-700">
                         Aktivieren
                     </button>
@@ -62,7 +62,6 @@
 
 <script>
 import Box from '~/components/Box'
-import List from '~/components/List'
 import ListItem from '~/components/ListItem'
 import KolloquiumItem from '~/components/KolloquiumItem'
 import AbgabeItem from '~/components/AbgabeItem'
@@ -70,7 +69,6 @@ import AbgabeItem from '~/components/AbgabeItem'
 export default {
     components: {
         Box,
-        List,
         ListItem,
         KolloquiumItem,
         AbgabeItem
@@ -79,20 +77,6 @@ export default {
       return {
             selectedKolloquium: "",
             selectedAbgabe: "",
-            kolloquiums: [
-                {
-                    title: "Hier ist eine Liste von Kolloquien.",
-                    inEdit: false,
-                },
-                {
-                    title: "Man kann eines auswählen um zu sehen, welche Abgaben eingereicht wurden.",
-                    inEdit: false,
-                },
-                {
-                    title: "Man kann ein Kolloquium erstellen oder löschen.",
-                    inEdit: false,
-                },
-            ],
             abgaben: [
                 "Hier ist eine Liste von Abgaben für das ausgewählte Kolloquium.",
                 "Man kann einzelne Abgaben löschen.",
@@ -125,7 +109,18 @@ export default {
         },
         deleteKolloquium(kolloquiumToDelete) {
             this.kolloquiums = this.kolloquiums.filter(kolloquium => kolloquium.title != kolloquiumToDelete.title);
-        }
-    }
+        },
+    },
+    async asyncData ({ $http }) {
+        const data = await $http.$get('/api/kolloquiums/getKolloquiums')
+        let kolloquiumList = []
+        data.kolloquiums.forEach(title => {
+            kolloquiumList.push({
+                title: title,
+                inEdit: false
+            })
+        })
+        return { kolloquiums: kolloquiumList }
+    },
 }
 </script>

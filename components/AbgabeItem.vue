@@ -6,8 +6,8 @@
             <div class="w-full select-none text-left mr-1">
                 {{ title }}
             </div>
-            <button
-                class="text-center text-white rounded-md select-none w-9 h-8 ml-1 bg-red-500 hover:bg-red-700 active:bg-red-900">╳</button>
+            <div
+                class="text-center text-white rounded-md select-none w-9 h-8 ml-1 bg-red-500 hover:bg-red-700 active:bg-red-900">╳</div>
         </div>
     </ListItem>
 </template>
