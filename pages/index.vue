@@ -22,7 +22,7 @@
                     @update:title="kolloquium.title=$event"
                     :inEdit="kolloquium.inEdit"
                     @update:inEdit="toggleEdit(kolloquium, $event)"
-                    @deleteKolloquium="deleteKolloquium(kolloquium)"
+                    @deleteKolloquium="deleteKolloquium(kolloquium.title)"
                 />
                 <ListItem
                     @click.native="createNewKolloquium()"
@@ -112,14 +112,14 @@ export default {
             if(createNew){
                 kolloquium.title = title
                 kolloquium.isNew = false
-                if (!title || title == '') {
+                if (!title || title.trim().length == 0) {
                     this.deleteKolloquium(title)
                     return
                 }
                 this.$axios.post('api/createKolloquium', { title: title })
             }
             else if (changeName) {
-                if (title == '') {
+                if (!title || title.trim().length == 0) {
                     return
                 }
                 kolloquium.title = title
@@ -127,10 +127,10 @@ export default {
             }
         },
         deleteKolloquium(kolloquiumToDelete) {
-            this.kolloquiums = this.kolloquiums.filter(kolloquium => kolloquium.title != kolloquiumToDelete.title);
+            this.kolloquiums = this.kolloquiums.filter(kolloquium => kolloquium.title != kolloquiumToDelete);
             this.selectedKolloquium = ""
             if(kolloquiumToDelete != ''){
-                this.$axios.post('api/deleteKolloquium', { title: kolloquiumToDelete.title })
+                this.$axios.post('api/deleteKolloquium', { title: kolloquiumToDelete })
             }
         },
     },
