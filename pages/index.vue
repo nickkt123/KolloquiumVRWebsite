@@ -49,7 +49,7 @@
                     <button class="border rounded mt-4 p-2 font-semibold text-white bg-green-500 hover:bg-green-600 focus:bg-green-700">
                         Aktivieren
                     </button>
-                    <n-link to="/abgabe-hochladen">
+                    <n-link :to="'/abgabe/' + selectedKolloquium">
                         <button class="border rounded mt-4 p-2 font-semibold text-white bg-blue-500 hover:bg-blue-600 focus:bg-blue-700">
                             Link Teilen
                         </button>
@@ -77,17 +77,15 @@ export default {
       return {
             selectedKolloquium: "",
             selectedAbgabe: "",
-            abgaben: [
-                "Hier ist eine Liste von Abgaben für das ausgewählte Kolloquium.",
-                "Man kann einzelne Abgaben löschen.",
-                "Wenn man auf Aktivieren klickt, werden die Abgaben vom Kolloquium in das VR-Programm geladen"
-            ]
         }
     },
     methods: {
-        selectKolloquium(kolloquium) {
+        async selectKolloquium(kolloquium) {
             this.selectedKolloquium = kolloquium.title
             this.selectedAbgabe = ''
+            this.abgaben = []
+            const data = await this.$axios.$post('/api/getAbgaben/', { kolloquium: kolloquium.title })
+            this.abgaben = data.abgaben
         },
         selectAbgabe(abgabe) {
             this.selectedAbgabe = abgabe
@@ -134,16 +132,17 @@ export default {
             }
         },
     },
-    async asyncData ({ $http }) {
-        const data = await $http.$get('/api/getKolloquiums/')
+    async asyncData ({ $axios }) {
+        const dataKolloquiums = await $axios.$get('/api/getKolloquiums/')
         let kolloquiumList = []
-        data.kolloquiums.forEach(title => {
+        dataKolloquiums.kolloquiums.forEach(title => {
             kolloquiumList.push({
                 title: title,
                 inEdit: false
             })
         })
-        return { kolloquiums: kolloquiumList }
+        const dataAbgaben = await $axios.$post('/api/getAbgaben/', { kolloquium: kolloquiumList[0].title })
+        return { kolloquiums: kolloquiumList, abgaben: dataAbgaben.abgaben, selectedKolloquium: kolloquiumList[0].title }
     },
 }
 </script>

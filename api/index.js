@@ -1,4 +1,6 @@
 const express = require('express')
+const fileUpload = require('express-fileupload');
+const cors = require('cors');
 var bodyParser = require('body-parser')
 // Create express instance
 const app = express()
@@ -13,6 +15,10 @@ const kolloquiums = require('./routes/kolloquiums')
 app.use(bodyParser.urlencoded({ extended: false }))
 // parse application/json
 app.use(bodyParser.json())
+app.use(cors())
+app.use(fileUpload({
+    createParentPath: true
+  }));
 
 app.use(users)
 app.use(kolloquiums)
