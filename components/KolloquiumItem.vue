@@ -26,7 +26,7 @@
                     class="text-center text-white rounded-md select-none w-9 h-8 ml-1 bg-red-500 hover:bg-red-700 active:bg-red-900"
                     @click="deleteMe()"
                 >
-                    ╳
+                    X
                 </button>
             </client-only>
         </div>
