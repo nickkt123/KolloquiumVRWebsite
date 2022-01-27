@@ -183,29 +183,31 @@ router.use('/renameKolloquium', (req, res) => {
 // Submit Abgabe
 router.use('/submitAbgabe', (req, res) => {
     console.log('/submitAbgabe')
-    let { kolloquium, name, matrikelnummer, file, filename } = req.body
-    console.log('filename: ' + filename)
-    // let file = file.file
+    let { kolloquium, name, matrikelnummer, filename } = req.body
     let safeMatrikelnummer = removeDangerousSymbols(matrikelnummer)
     let safeName = removeDangerousSymbols(name)
     let safeKolloquium = removeDangerousSymbols(kolloquium)
+
+    if(!req.files) {
+        return res.send({
+            status: false,
+            message: 'No file uploaded'
+        });
+    }
+
+    let file = req.files.file;        
 
     if(isEmpty(safeKolloquium) || isEmpty(safeMatrikelnummer || isEmpty(safeName))) {
         console.error('Matrikelnummer, Name or Kolloquium was empty')
         return res.json({
             success: false,
-            message: 'Matrikelnummer, Name or Kolloquium'
+            message: 'Matrikelnummer, Name or Kolloquium was empty'
         })
     }
     let directory = kolloquiumDirectory + '/' + safeKolloquium + '/' + safeMatrikelnummer + '_' + safeName;
-    console.log('directory: ' + directory)
     fs.mkdir(directory, function(err) {
         if (err && err.code === "EEXIST") {
             console.warn('Directory "' + directory + '" already existed')
-            // return res.json({
-            //     success: true,
-            //     message: 'Directory "' + directory + '" already existed'
-            // })
         }
         else if (err) {
             console.error(err);
@@ -215,28 +217,10 @@ router.use('/submitAbgabe', (req, res) => {
             })
         }
         else {
-            console.log('Directory "' + directory + '" created successfully!');
-            // return res.json({
-            //     success: true,
-            //     message: 'Directory "' + directory + '" created successfully!'
-            // })
+            console.log('Directory "' + directory + '" created successfully');
         }
-        // fs.write(directory + '/' + filename, file, function(err) {
-        //     if (err) {
-        //         console.error(err);
-        //         return res.json({
-        //             success: false,
-        //             message: err
-        //         })
-        //     }
-        //     console.log("file '" + filename + "' was created!");
-        //     return res.json({
-        //         success: true,
-        //         message: "file '" + filename + "' was created"
-        //     })
-        // })
-        console.log('saving file ' + filename)
         file.mv(directory + '/' + filename);
+        console.log('saved file ' + filename)
     })
 })
 
