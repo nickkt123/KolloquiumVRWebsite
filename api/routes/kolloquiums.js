@@ -62,11 +62,10 @@ router.use('/getKolloquiums', (req, res) => {
 
 // Get Abgaben
 router.use('/getAbgaben', (req, res) => {
-    console.log('/getAbgaben')
     let { kolloquium } = req.body
+    console.log("Get Abgaben from '" + kolloquium + "'")
     let safeKolloquium = removeDangerousSymbols(kolloquium)
 
-    console.log('from Kolloquium: ' + safeKolloquium)
     if(isEmpty(safeKolloquium)) {
         console.warn('Folder has no name')
         return res.json({
@@ -85,9 +84,9 @@ router.use('/getAbgaben', (req, res) => {
 
 // Delete Kolloquium
 router.use('/deleteKolloquium', (req, res) => {
-    console.log('/deleteKolloquium')
     let { title } = req.body
     let safeTitle = removeDangerousSymbols(title)
+    console.log("Delete Kolloquium '" + title + "'")
 
     if(isEmpty(safeTitle)) {
         console.error('Folder has no name')
@@ -114,9 +113,8 @@ router.use('/deleteKolloquium', (req, res) => {
 
 // Create Kolloquium
 router.use('/createKolloquium', (req, res) => {
-    console.log('createKolloquium')
-    console.log(req.body)
     let { title } = req.body
+    console.log("Create Kolloquium '" + title + "'")
     let safeTitle = removeDangerousSymbols(title)
 
     if(isEmpty(safeTitle)) {
@@ -142,10 +140,10 @@ router.use('/createKolloquium', (req, res) => {
             })
         }
         else {
-            console.log('Directory "' + safeTitle + '" created successfully!');
+            console.log('Directory "' + safeTitle + '" created successfully');
             return res.json({
                 success: true,
-                message: 'Directory "' + safeTitle + '" created successfully!'
+                message: 'Directory "' + safeTitle + '" created successfully'
             })
         }
     });
@@ -153,9 +151,8 @@ router.use('/createKolloquium', (req, res) => {
 
 // Rename Kolloquium
 router.use('/renameKolloquium', (req, res) => {
-    console.log('/renameKolloquium')
-    console.log(req.body);
     let { oldTitle, newTitle } = req.body
+    console.log("Rename Kolloquium '" + oldTitle + "' to '" + newTitle + "'")
     let safeOldTitle = removeDangerousSymbols(oldTitle)
     let safeNewTitle = removeDangerousSymbols(newTitle)
 
@@ -175,20 +172,22 @@ router.use('/renameKolloquium', (req, res) => {
             })
         }
     
-        console.log("Directory renamed successfully.");
+        console.log("Directory renamed successfully");
     });
 })
 
 
 // Submit Abgabe
 router.use('/submitAbgabe', (req, res) => {
-    console.log('/submitAbgabe')
     let { kolloquium, name, matrikelnummer, filename } = req.body
+    console.log("Submit Abgabe '" + filename + "' to '" + kolloquium + "'")
+
     let safeMatrikelnummer = removeDangerousSymbols(matrikelnummer)
     let safeName = removeDangerousSymbols(name)
     let safeKolloquium = removeDangerousSymbols(kolloquium)
 
     if(!req.files) {
+        console.log('No file uploaded')
         return res.send({
             status: false,
             message: 'No file uploaded'
