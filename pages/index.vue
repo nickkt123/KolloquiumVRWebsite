@@ -16,12 +16,12 @@
                 <KolloquiumItem
                     v-for="kolloquium in kolloquiums"
                     :key="kolloquium.title"
-                    @click.native="selectKolloquium(kolloquium)"
                     :selected="selectedKolloquium===kolloquium.title"
                     :title="kolloquium.title"
-                    @update:title="kolloquium.title=$event"
                     :inEdit="kolloquium.inEdit"
+                    @update:title="kolloquium.title=$event"
                     @update:inEdit="toggleEdit(kolloquium, $event)"
+                    @selectKolloquium="selectKolloquium(kolloquium.title)"
                     @deleteKolloquium="deleteKolloquium(kolloquium.title)"
                 />
                 <ListItem
@@ -37,23 +37,33 @@
                 </div>
             </template>
             <template slot="content">
-                <p class="text-xl"><span class="font-semibold">Titel:</span> {{ selectedKolloquium }}</p>
-                <p class="font-semibold mt-4 mb-1">Abgaben:</p>
-                <AbgabeItem
-                    v-for="abgabe in abgaben"
-                    :key="abgabe"
-                    @click.native="selectAbgabe(abgabe)"
-                    :title="abgabe"
-                />
-                <div class="flex flex-row justify-between"> 
-                    <button class="border rounded mt-4 p-2 font-semibold text-white bg-green-500 hover:bg-green-600 focus:bg-green-700">
-                        Aktivieren
-                    </button>
-                    <n-link :to="'/abgabe/' + selectedKolloquium">
-                        <button class="border rounded mt-4 p-2 font-semibold text-white bg-blue-500 hover:bg-blue-600 focus:bg-blue-700">
-                            Link Teilen
+                <div v-if="selectedKolloquium">
+                    <p class="text-xl"><span class="font-semibold">Titel:</span> {{ selectedKolloquium }}</p>
+                    <p class="font-semibold mt-4 mb-1">Abgaben:</p>
+                    <div v-if="abgaben.length > 0">
+                        <AbgabeItem
+                            v-for="abgabe in abgaben"
+                            :key="abgabe"
+                            @click.native="selectAbgabe(abgabe)"
+                            :title="abgabe"
+                        />
+                    </div>
+                    <div v-else>
+                        Keine Abgaben
+                    </div>
+                    <div class="flex flex-row justify-between"> 
+                        <button class="border rounded mt-4 p-2 font-semibold text-white bg-green-500 hover:bg-green-600 focus:bg-green-700">
+                            Aktivieren
                         </button>
-                    </n-link>
+                        <n-link :to="'/abgabe/' + selectedKolloquium">
+                            <button class="border rounded mt-4 p-2 font-semibold text-white bg-blue-500 hover:bg-blue-600 focus:bg-blue-700">
+                                Link Teilen
+                            </button>
+                        </n-link>
+                    </div>
+                </div>
+                <div v-else class="font-semibold">
+                    Kein Kolloquium ausgewählt
                 </div>
             </template>
         </box>
@@ -80,11 +90,11 @@ export default {
         }
     },
     methods: {
-        async selectKolloquium(kolloquium) {
-            this.selectedKolloquium = kolloquium.title
+        async selectKolloquium(kolloquiumTitle) {
+            this.selectedKolloquium = kolloquiumTitle
             this.selectedAbgabe = ''
             this.abgaben = []
-            const data = await this.$axios.$post('/api/getAbgaben/', { kolloquium: kolloquium.title })
+            const data = await this.$axios.$post('/api/getAbgaben/', { kolloquium: kolloquiumTitle })
             this.abgaben = data.abgaben
         },
         selectAbgabe(abgabe) {
@@ -98,7 +108,7 @@ export default {
             this.kolloquiums = this.kolloquiums.filter(kolloquium => kolloquium.title.length > 0);
             this.kolloquiums = [...this.kolloquiums, {title: '', inEdit: true, isNew: true}];
         },
-        toggleEdit(kolloquium, {inEdit, title}) {
+        async toggleEdit(kolloquium, {inEdit, title}) {
             let createNew = kolloquium.inEdit && kolloquium.isNew;
             let changeName = kolloquium.inEdit && !kolloquium.isNew;
 
@@ -115,34 +125,55 @@ export default {
                     return
                 }
                 this.$axios.post('api/createKolloquium', { title: title })
+                this.refreshKolloquiumList()
             }
             else if (changeName) {
+                // TODO: Request confirmation before changing name so the link does not break
+                // TODO: Or make sure the link stays the same if the folder is renamed?
                 if (!title || title.trim().length == 0) {
                     return
                 }
-                kolloquium.title = title
                 this.$axios.post('api/renameKolloquium', { oldTitle: kolloquium.title, newTitle: title})
+                this.refreshKolloquiumList()
             }
         },
-        deleteKolloquium(kolloquiumToDelete) {
-            this.kolloquiums = this.kolloquiums.filter(kolloquium => kolloquium.title != kolloquiumToDelete);
-            this.selectedKolloquium = ""
-            if(kolloquiumToDelete != ''){
-                this.$axios.post('api/deleteKolloquium', { title: kolloquiumToDelete })
+        async deleteKolloquium(kolloquiumTitle) {
+            this.selectedKolloquium = ''
+            if(kolloquiumTitle != ''){
+                this.$axios.post('api/deleteKolloquium', { title: kolloquiumTitle })
             }
+            this.refreshKolloquiumList()
         },
+        async refreshKolloquiumList() {
+            this.abgaben = []
+            this.kolloquiums = []
+            this.selectedKolloquium = ''
+            this.selectedAbgabe = ''
+            const dataKolloquiums = await this.$axios.$get('/api/getKolloquiums/')
+            dataKolloquiums.kolloquiums.forEach(title => {
+            this.kolloquiums.push({
+                title: title,
+                inEdit: false
+            })
+        })
+
+        }
     },
     async asyncData ({ $axios }) {
-        const dataKolloquiums = await $axios.$get('/api/getKolloquiums/')
         let kolloquiumList = []
+        let abgaben = []
+        const dataKolloquiums = await $axios.$get('/api/getKolloquiums/')
         dataKolloquiums.kolloquiums.forEach(title => {
             kolloquiumList.push({
                 title: title,
                 inEdit: false
             })
         })
-        const dataAbgaben = await $axios.$post('/api/getAbgaben/', { kolloquium: kolloquiumList[0].title })
-        return { kolloquiums: kolloquiumList, abgaben: dataAbgaben.abgaben, selectedKolloquium: kolloquiumList[0].title }
+        if (kolloquiumList.length !== 0){
+            const dataAbgaben = await $axios.$post('/api/getAbgaben/', { kolloquium: kolloquiumList[0].title })
+            abgaben = dataAbgaben.abgaben
+        }
+        return { kolloquiums: kolloquiumList, abgaben: abgaben }
     },
 }
 </script>

@@ -6,9 +6,15 @@ var fs = require("fs")
 const kolloquiumDirectory = 'Kolloquiums'
 
 function getDirectories(path) {
-    return fs.readdirSync(path).filter(function (file) {
-        return fs.statSync(path+'/'+file).isDirectory();
-    });
+    // check if directory exists
+    if (fs.existsSync(path)) {
+        return fs.readdirSync(path).filter(function (file) {
+            return fs.statSync(path+'/'+file).isDirectory();
+        });
+    } else {
+        console.log('Directory not found.');
+        return []
+    }
 }
 
 function isEmpty(checkString) {
@@ -54,6 +60,7 @@ fs.mkdir(kolloquiumDirectory,function(err) {
 router.use('/getKolloquiums', (req, res) => {
     console.log('/getKolloquiums')
     var directories = getDirectories(kolloquiumDirectory)
+    console.log('Kolloquiums: ' + directories)
     return res.json({
         kolloquiums: directories
     });
@@ -96,19 +103,40 @@ router.use('/deleteKolloquium', (req, res) => {
         })
     }
 
-    fs.rmdir(kolloquiumDirectory + '/' + safeTitle, function(err) {
+    let dirname = kolloquiumDirectory + '/' + safeTitle
+    fs.readdir(dirname, function(err, files) {
         if (err) {
-           console.error(err);
-           return res.json({
-               success: false,
-               message: err
-           })
+            console.error(err);
+            return res.json({
+                success: false,
+                message: err
+            })
+        } else {
+            if (!files.length) {
+                // directory appears to be empty
+                fs.rmdir(dirname, function(err) {
+                    if (err) {
+                        console.error(err);
+                        return res.json({
+                            success: false,
+                            message: err
+                        })
+                    }
+                    return res.json({
+                        success: true,
+                        message: 'removed Kolloquium ' + safeTitle
+                    })
+                });
+            } else {
+                // TODO: ask for confirmation to delete anyway
+                console.log('Directory is not empty. TODO: Ask for confirmation to delete anyway')
+                return res.json({
+                    success: false,
+                    message: 'Kolloquium ' + safeTitle + ' was not empty'
+                })
+            }
         }
-     });
-    return res.json({
-        success: true,
-        message: 'removed Kolloquium ' + safeTitle
-    })
+    });
 })
 
 // Create Kolloquium

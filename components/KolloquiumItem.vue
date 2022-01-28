@@ -3,10 +3,19 @@
         :selected="selected"
     >
         <div class="flex flex-row w-full">
-            <div v-if="!inEdit" class="w-full select-none text-left mr-1">
+            <div
+                v-if="!inEdit"
+                class="w-full select-none text-left mr-1"
+                @click="selectMe()"
+            >
                 {{ title }}
             </div>
-            <input v-if="inEdit" class="w-full rounded border p-1" v-model="title" placeholder="Neues Kolloquium..." />
+            <input
+                v-if="inEdit"
+                class="w-full rounded border p-1"
+                v-model="title"
+                placeholder="Neues Kolloquium..."
+            />
             <client-only>
                 <button
                     v-if="inEdit"
@@ -65,6 +74,9 @@ export default {
         },
         deleteMe() {
             this.$emit("deleteKolloquium")
+        },
+        selectMe() {
+            this.$emit("selectKolloquium")
         }
     }
 }
