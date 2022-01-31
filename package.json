@@ -18,7 +18,9 @@
     "cors": "^2.8.5",
     "express": "latest",
     "express-fileupload": "^1.2.1",
-    "nuxt": "latest"
+    "extract-zip": "^2.0.1",
+    "nuxt": "latest",
+    "replace-in-file": "^6.3.2"
   },
   "devDependencies": {
     "@nuxtjs/tailwindcss": "^4.2.1",

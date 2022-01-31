@@ -1,11 +1,17 @@
 const { Router } = require('express')
-
-
-const router = Router();
 var fs = require("fs");
 var exec = require('child_process').exec;
+var extract = require('extract-zip')
+const router = Router();
+const path = require('path');
+const {resolve} = require("path");
+const replace = require('replace-in-file');
 
-const kolloquiumDirectory = 'Kolloquiums'
+const kolloquiumDirectory = '../Kolloquiums'
+const modDirectory = 'C:/Users/Nick/Documents/UnrealEngine/Projects/KolloquiumVR/Mods'
+const pakDirectory = 'C:/Users/Nick/Documents/UnrealPackagedGames/KolloquiumVR/WindowsNoEditor/KolloquiumVR/Mods'
+const editorFile = 'C:/Users/Nick/Documents/UnrealEngine/Projects/KolloquiumVR/Saved/Config/Windows/Editor.ini'
+
 
 function getDirectories(path) {
     // check if directory exists
@@ -251,7 +257,7 @@ router.use('/submitAbgabe', (req, res) => {
         });
     }
 
-    let file = req.files.file;        
+    let zipfile = req.files.file;        
 
     if(isEmpty(safeKolloquium) || isEmpty(safeMatrikelnummer || isEmpty(safeName))) {
         console.error('Matrikelnummer, Name or Kolloquium was empty')
@@ -260,10 +266,10 @@ router.use('/submitAbgabe', (req, res) => {
             message: 'Matrikelnummer, Name or Kolloquium was empty'
         })
     }
-    let directory = kolloquiumDirectory + '/' + safeKolloquium + '/Abgaben/' + safeMatrikelnummer + '_' + safeName;
-    fs.mkdir(directory, function(err) {
+    let datasmithAbgabeDirectory = path.join(kolloquiumDirectory, safeKolloquium, 'Abgaben', safeMatrikelnummer + '_' + safeName);
+    fs.mkdir(datasmithAbgabeDirectory, function(err) {
         if (err && err.code === "EEXIST") {
-            console.warn('Directory "' + directory + '" already existed')
+            console.warn('Directory "' + datasmithAbgabeDirectory + '" already existed')
         }
         else if (err) {
             console.error(err);
@@ -273,39 +279,147 @@ router.use('/submitAbgabe', (req, res) => {
             })
         }
         else {
-            console.log('Directory "' + directory + '" created successfully');
+            console.log('Directory "' + datasmithAbgabeDirectory + '" created successfully');
         }
-        file.mv(directory + '/' + filename);
-        console.log('saved file ' + filename)
-    });
-
-    // Change the name of the mod and location of Datasmith file in the editor.init... 
-    exec('echo Change the name of the mod and location of Datasmith file in the editor.init...',
-    function (error, stdout, stderr) {
-        console.log('stdout: ' + stdout);
-        if (!isEmpty(stderr)){
-            console.log('stderr: ' + stderr);
-        }
-        if (error !== null) {
-             console.log('exec error: ' + error);
-        }
-
-        // Run the python script that starts the unreal engine with the editor utility... 
-        exec('echo Run the python script that starts the unreal engine with the editor utility... ',
-        function (error, stdout, stderr) {
-            console.log('stdout: ' + stdout);
-            if (!isEmpty(stderr)){
-                console.log('stderr: ' + stderr);
+        let zipPath = resolve(datasmithAbgabeDirectory + '/' + filename)
+        zipfile.mv(zipPath);
+        extract(zipPath, { dir: resolve(datasmithAbgabeDirectory) }, err => {
+            if (err) {
+                console.error(err);
+                return res.json({
+                    success: false,
+                    message: err
+                })
             }
-            if (error !== null) {
-                console.log('exec error: ' + error);
+        }).then(() => {
+            console.log('saved file ' + filename)
+        
+            // Rename Mod folder to 'Abgabe_' + safeMatrikelnummer + '_' + safeName
+            let mod_folder_name = 'Abgabe_' + safeMatrikelnummer + '_' + safeName
+            let modDirectories = getDirectories(modDirectory);
+            if(modDirectories.length == 0){
+                console.log('no mod folders')
+                return res.json({
+                    success: false,
+                    message: 'no mod folders'
+                })
             }
+            let newAbgabeDirectory = modDirectory + '/' + mod_folder_name
+            fs.rename(modDirectory + '/' + modDirectories[0], newAbgabeDirectory, (err) => {
+                if(err) {
+                    console.error(err);
+                    return res.json({
+                        success: false,
+                        message: err
+                    })
+                }
+                // Rename Abgabe.uplugin same
+                fs.readdir(newAbgabeDirectory, (err, files) => {
+                    if(err) {
+                        console.error(err);
+                        return res.json({
+                            success: false,
+                            message: err
+                        })
+                    }
+                    const upluginFiles = files.filter(file => {
+                        return path.extname(file).toLowerCase() === '.uplugin';
+                    });
+                    if(upluginFiles.length == 0){
+                        console.log('no uplugin files')
+                        return res.json({
+                            success: false,
+                            message: 'no uplugin files'
+                        })
+                    }
+                    fs.rename(newAbgabeDirectory + '/' + upluginFiles[0], newAbgabeDirectory + '/' + mod_folder_name + '.uplugin', (err) => {
+                        if(err) {
+                            console.error(err);
+                            return res.json({
+                                success: false,
+                                message: err
+                            })
+                        }
+                    })
+
+                    console.log('changed name of mod folder and uplugin')
+                    // Change the name of the mod and location of Datasmith file in the editor.init...
+                    fs.readdir(datasmithAbgabeDirectory, (err, files) => {
+                        if(err) {
+                            console.error(err);
+                            return res.json({
+                                success: false,
+                                message: err
+                            })
+                        }
+                        const datasmithFiles = files.filter(file => {
+                            return path.extname(file).toLowerCase() === '.udatasmith';
+                        });
+                        if(datasmithFiles.length == 0){
+                            console.log('no datasmith files')
+                            return res.json({
+                                success: false,
+                                message: 'no datasmith files'
+                            })
+                        }
+                        const ModFolderRegex = new RegExp('ModFolder=.*', 'i');
+                        const FilePathRegex = new RegExp('FilePath=.*', 'i');
+                        const replaceOptions = {
+                            files: editorFile,
+                            from: [ModFolderRegex, FilePathRegex],
+                            to: ['ModFolder=' + mod_folder_name, 'FilePath=' + resolve(datasmithAbgabeDirectory + '/' + datasmithFiles[0])]
+                        };
+                        replace(replaceOptions, (error, results) => {
+                            if (error) {
+                            return console.error('Error occurred:', error);
+                            }
+                            console.log('Replacement results:', results);
+                            
+                            // Remove old content in Mod folder
+                            fs.rmSync(path.join(newAbgabeDirectory, 'Content'), { recursive: true, force: true });
+                            fs.mkdir(path.join(newAbgabeDirectory, 'Content'), function(err) {
+                                if (err) {
+                                    console.error(err);
+                                    return res.json({
+                                        success: false,
+                                        message: err
+                                    })
+                                }
+                            
+                                // Run the python script that starts the unreal engine with the editor utility... 
+                                exec('C:\\Users\\Nick\\Documents\\UnrealEngine\\Engine\\Binaries\\Win64\\UE4Editor-Cmd.exe KolloquiumVR -ExecutePythonScript="C:\\Users\\Nick\\Documents\\UnrealEngine\\Projects\\KolloquiumVR\\Scripts\\ImportDatasmithCommandlet.py"',
+                                function (error, stdout, stderr) {
+                                    if (!isEmpty(stderr)){
+                                        console.log('stderr: ' + stderr);
+                                    }
+                                    if (error !== null) {
+                                        console.log('exec error: ' + error);
+                                    }
+
+                                    // Run the automation script that packages the mod
+                                    exec('C:\\Users\\Nick\\Documents\\UnrealEngine\\Engine\\Build\\BatchFiles\\RunUAT.bat PackageUGC -Project=C:/Users/Nick/Documents/UnrealEngine/Projects/KolloquiumVR/KolloquiumVR.uproject -PluginPath=C:/Users/Nick/Documents/UnrealEngine/Projects/KolloquiumVR/Mods/' + mod_folder_name + '/' + mod_folder_name + '.uplugin -basedonreleaseversion=KolloquiumVR_v1 -StagingDirectory=' + resolve(path.join(kolloquiumDirectory, safeKolloquium, 'Mods')) + ' -nocompile',
+                                    function (error, stdout, stderr) {
+                                        if (!isEmpty(stderr)){
+                                            console.log('stderr: ' + stderr);
+                                        }
+                                        if (error !== null) {
+                                            console.log('exec error: ' + error);
+                                        }
+
+                                        // Run the automation script that packages the mod
+                                    });
+                                });
+                            });
+                        });
+                    });
+                });
+            });
         });
     });
-})
+});
 
 
-// Submit Abgabe
+// activate Kolloquium
 router.use('/activateKolloquium', (req, res) => {
     let { kolloquium } = req.body
     console.log('Activate ' + kolloquium)
@@ -319,7 +433,7 @@ router.use('/activateKolloquium', (req, res) => {
         if (error !== null) {
             console.log('exec error: ' + error);
         }
-    });
+    })
 })
 
 

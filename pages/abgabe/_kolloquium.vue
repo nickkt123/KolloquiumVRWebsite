@@ -31,6 +31,7 @@
                         <input
                             type=file
                             ref="file"
+                            accept=".zip"
                             @change="fileSelected"
                             class="ml-1 w-full rounded border p-1"
                         >
