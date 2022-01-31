@@ -52,7 +52,10 @@
                         Keine Abgaben
                     </div>
                     <div class="flex flex-row justify-between"> 
-                        <button class="border rounded mt-4 p-2 font-semibold text-white bg-green-500 hover:bg-green-600 focus:bg-green-700">
+                        <button
+                            class="border rounded mt-4 p-2 font-semibold text-white bg-green-500 hover:bg-green-600 focus:bg-green-700"
+                            @click="activateKolloquium(selectedKolloquium)"
+                        >
                             Aktivieren
                         </button>
                         <n-link :to="'/abgabe/' + selectedKolloquium">
@@ -151,12 +154,14 @@ export default {
             this.selectedAbgabe = ''
             const dataKolloquiums = await this.$axios.$get('/api/getKolloquiums/')
             dataKolloquiums.kolloquiums.forEach(title => {
-            this.kolloquiums.push({
-                title: title,
-                inEdit: false
+                this.kolloquiums.push({
+                    title: title,
+                    inEdit: false
+                })
             })
-        })
-
+        },
+        activateKolloquium(kolloquium) {
+            this.$axios.post('api/activateKolloquium', { kolloquium: kolloquium })
         }
     },
     async asyncData ({ $axios }) {

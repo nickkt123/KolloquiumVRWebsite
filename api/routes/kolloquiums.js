@@ -1,8 +1,10 @@
 const { Router } = require('express')
 
 
-const router = Router()
-var fs = require("fs")
+const router = Router();
+var fs = require("fs");
+var exec = require('child_process').exec;
+
 const kolloquiumDirectory = 'Kolloquiums'
 
 function getDirectories(path) {
@@ -52,7 +54,7 @@ fs.mkdir(kolloquiumDirectory,function(err) {
         return console.error(err);
     }
     else {
-        console.log("Directory created successfully!");
+        console.log("Directory created successfully");
     }
 });
 
@@ -81,7 +83,7 @@ router.use('/getAbgaben', (req, res) => {
         })
     }
 
-    var directories = getDirectories(kolloquiumDirectory + '/' + safeKolloquium)
+    var directories = getDirectories(kolloquiumDirectory + '/' + safeKolloquium + '/Abgaben')
     return res.json({
         success: true,
         abgaben: directories
@@ -155,10 +157,6 @@ router.use('/createKolloquium', (req, res) => {
     fs.mkdir(kolloquiumDirectory + '/' + safeTitle, function(err) {
         if (err && err.code === "EEXIST") {
             console.warn('Directory "' + safeTitle + '" already existed')
-            return res.json({
-                success: true,
-                message: 'Directory "' + safeTitle + '" already existed'
-            })
         }
         else if (err) {
             console.error(err);
@@ -169,11 +167,42 @@ router.use('/createKolloquium', (req, res) => {
         }
         else {
             console.log('Directory "' + safeTitle + '" created successfully');
-            return res.json({
+        }
+
+        fs.mkdir(kolloquiumDirectory + '/' + safeTitle + '/Mods', function(err) {
+            if (err && err.code === "EEXIST") {
+                console.log('Mods Directory already existed')
+            }
+            else if (err) {
+                return res.json({
+                    success: false,
+                    message: err
+                })
+            }
+            else {
+                console.log("Mods Directory created successfully");
+            }
+        });
+
+        fs.mkdir(kolloquiumDirectory + '/' + safeTitle + '/Abgaben', function(err) {
+            if (err && err.code === "EEXIST") {
+                console.log('Abgaben Directory already existed')
+            }
+            else if (err) {
+                return res.json({
+                    success: false,
+                    message: err
+                })
+            }
+            else {
+                console.log("Abgaben Directory created successfully");
+            }
+        });
+
+        return res.json({
                 success: true,
                 message: 'Directory "' + safeTitle + '" created successfully'
             })
-        }
     });
 })
 
@@ -231,7 +260,7 @@ router.use('/submitAbgabe', (req, res) => {
             message: 'Matrikelnummer, Name or Kolloquium was empty'
         })
     }
-    let directory = kolloquiumDirectory + '/' + safeKolloquium + '/' + safeMatrikelnummer + '_' + safeName;
+    let directory = kolloquiumDirectory + '/' + safeKolloquium + '/Abgaben/' + safeMatrikelnummer + '_' + safeName;
     fs.mkdir(directory, function(err) {
         if (err && err.code === "EEXIST") {
             console.warn('Directory "' + directory + '" already existed')
@@ -248,9 +277,50 @@ router.use('/submitAbgabe', (req, res) => {
         }
         file.mv(directory + '/' + filename);
         console.log('saved file ' + filename)
-    })
+    });
+
+    // Change the name of the mod and location of Datasmith file in the editor.init... 
+    exec('echo Change the name of the mod and location of Datasmith file in the editor.init...',
+    function (error, stdout, stderr) {
+        console.log('stdout: ' + stdout);
+        if (!isEmpty(stderr)){
+            console.log('stderr: ' + stderr);
+        }
+        if (error !== null) {
+             console.log('exec error: ' + error);
+        }
+
+        // Run the python script that starts the unreal engine with the editor utility... 
+        exec('echo Run the python script that starts the unreal engine with the editor utility... ',
+        function (error, stdout, stderr) {
+            console.log('stdout: ' + stdout);
+            if (!isEmpty(stderr)){
+                console.log('stderr: ' + stderr);
+            }
+            if (error !== null) {
+                console.log('exec error: ' + error);
+            }
+        });
+    });
 })
 
+
+// Submit Abgabe
+router.use('/activateKolloquium', (req, res) => {
+    let { kolloquium } = req.body
+    console.log('Activate ' + kolloquium)
+    // Remove the contents of the mod folder and move the .pak folders to the mod folder 
+    exec('echo Remove the contents of the mod folder and move the .pak folders to the mod folder',
+    function (error, stdout, stderr) {
+        console.log('stdout: ' + stdout);
+        if (!isEmpty(stderr)){
+            console.log('stderr: ' + stderr);
+        }
+        if (error !== null) {
+            console.log('exec error: ' + error);
+        }
+    });
+})
 
 
 module.exports = router
