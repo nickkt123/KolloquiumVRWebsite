@@ -8,11 +8,33 @@ const {resolve} = require("path");
 const replace = require('replace-in-file');
 
 const kolloquiumDirectory = '../Kolloquiums'
-const modDirectory = 'C:/Users/Nick/Documents/UnrealEngine/Projects/KolloquiumVR/Mods'
-const pakDirectory = 'C:/Users/Nick/Documents/UnrealPackagedGames/KolloquiumVR/WindowsNoEditor/KolloquiumVR/Mods'
-const editorFile = 'C:/Users/Nick/Documents/UnrealEngine/Projects/KolloquiumVR/Saved/Config/Windows/Editor.ini'
-const engineFile = 'C:/Users/Nick/Documents/UnrealEngine/Projects/KolloquiumVR/Config/DefaultEngine.ini'
-const templateLevel = 'C:/Users/Nick/Documents/UnrealEngine/Projects/KolloquiumVR/Content/Maps/TemplateLevel.umap'
+const engineDirectory = 'C:/Users/Nick/Documents/UnrealEngine'
+const packagedGame = 'C:/Users/Nick/Documents/UnrealPackagedGames/KolloquiumVR'
+
+const engineINI =            engineDirectory + '/Projects/KolloquiumVR/Config/DefaultEngine.ini'
+const editorINI =            engineDirectory + '/Projects/KolloquiumVR/Saved/Config/Windows/Editor.ini'
+const templateLevel =        engineDirectory + '/Projects/KolloquiumVR/Content/Maps/TemplateLevel.umap'
+const modDirectory =         engineDirectory + '/Projects/KolloquiumVR/Mods'                             
+const pythonScript =         engineDirectory + '/Projects/KolloquiumVR/Scripts/ImportDatasmithCommandlet.py'
+const kolloquiumVRuproject = engineDirectory + '/Projects/KolloquiumVR/KolloquiumVR.uproject'
+const runUAT =               engineDirectory + '/Engine/Build/BatchFiles/RunUAT.bat'
+const UE4EditorCMD =         engineDirectory + '/Engine/Binaries/Win64/UE4Editor-Cmd.exe'
+const pakDirectory =         packagedGame + '/WindowsNoEditor/KolloquiumVR/Mods'
+const kolloquiumVRexe =      packagedGame + '/WindowsNoEditor/KolloquiumVR.exe'
+
+
+// Gets executed at server startup
+fs.mkdir(kolloquiumDirectory,function(err) {
+    if (err && err.code === "EEXIST") {
+        console.log('Kolloquiums Directory already existed')
+    }
+    else if (err) {
+        return console.error(err);
+    }
+    else {
+        console.log("Directory created successfully");
+    }
+});
 
 
 function getDirectories(path) {
@@ -58,17 +80,6 @@ function removeDangerousSymbols(fname) {
     return fname;
 }
 
-fs.mkdir(kolloquiumDirectory,function(err) {
-    if (err && err.code === "EEXIST") {
-        console.log('Kolloquiums Directory already existed')
-    }
-    else if (err) {
-        return console.error(err);
-    }
-    else {
-        console.log("Directory created successfully");
-    }
-});
 
 // Get Kolloquiums
 router.use('/getKolloquiums', (req, res) => {
@@ -371,7 +382,7 @@ router.use('/submitAbgabe', (req, res) => {
                         const ModFolderRegex = new RegExp('ModFolder=.*', 'i');
                         const FilePathRegex = new RegExp('FilePath=.*', 'i');
                         const editorReplaceOptions = {
-                            files: editorFile,
+                            files: editorINI,
                             from: [ModFolderRegex, FilePathRegex],
                             to: ['ModFolder=' + mod_folder_name, 'FilePath=' + resolve(datasmithAbgabeDirectory + '/' + datasmithFiles[0])]
                         };
@@ -383,7 +394,7 @@ router.use('/submitAbgabe', (req, res) => {
                             let levelName = mod_folder_name + '_Level'
                             const startupMapRegex = new RegExp('EditorStartupMap=.*', 'i');
                             const engineReplaceOptions = {
-                                files: engineFile,
+                                files: engineINI,
                                 from: startupMapRegex,
                                 to: 'EditorStartupMap=/' + mod_folder_name + '/'+ levelName + '.' + levelName
                             };
@@ -412,7 +423,7 @@ router.use('/submitAbgabe', (req, res) => {
                                             })
                                         }
 
-                                        exec('C:\\Users\\Nick\\Documents\\UnrealEngine\\Engine\\Binaries\\Win64\\UE4Editor-Cmd.exe KolloquiumVR -ExecutePythonScript="C:\\Users\\Nick\\Documents\\UnrealEngine\\Projects\\KolloquiumVR\\Scripts\\ImportDatasmithCommandlet.py"',
+                                        exec(UE4EditorCMD + ' KolloquiumVR -ExecutePythonScript="' + pythonScript + '"',
                                         function (error, stdout, stderr) {
                                             if (!isEmpty(stderr)){
                                                 console.log('stderr: ' + stderr);
@@ -422,7 +433,7 @@ router.use('/submitAbgabe', (req, res) => {
                                             }
 
                                             // Run the automation script that packages the mod
-                                            exec('C:\\Users\\Nick\\Documents\\UnrealEngine\\Engine\\Build\\BatchFiles\\RunUAT.bat PackageUGC -Project=C:/Users/Nick/Documents/UnrealEngine/Projects/KolloquiumVR/KolloquiumVR.uproject -PluginPath=C:/Users/Nick/Documents/UnrealEngine/Projects/KolloquiumVR/Mods/' + mod_folder_name + '/' + mod_folder_name + '.uplugin -basedonreleaseversion=KolloquiumVR_v1 -StagingDirectory=' + resolve(path.join(kolloquiumDirectory, safeKolloquium, 'Mods')) + ' -nocompile',
+                                            exec(runUAT + ' PackageUGC -Project=' + kolloquiumVRuproject + ' -PluginPath=' + modDirectory +'/' + mod_folder_name + '/' + mod_folder_name + '.uplugin -basedonreleaseversion=KolloquiumVR_v1 -StagingDirectory=' + resolve(path.join(kolloquiumDirectory, safeKolloquium, 'Mods')) + ' -nocompile',
                                             function (error, stdout, stderr) {
                                                 if (!isEmpty(stderr)){
                                                     console.log('stderr: ' + stderr);
@@ -430,8 +441,6 @@ router.use('/submitAbgabe', (req, res) => {
                                                 if (error !== null) {
                                                     console.log('exec error: ' + error);
                                                 }
-
-                                                // Run the automation script that packages the mod
                                             });
                                         });
                                     });
@@ -485,6 +494,16 @@ router.use('/activateKolloquium', (req, res) => {
                     }
                 })
             })
+
+            exec(kolloquiumVRexe,
+            function (error, stdout, stderr) {
+                if (!isEmpty(stderr)){
+                    console.log('stderr: ' + stderr);
+                }
+                if (error !== null) {
+                    console.log('exec error: ' + error);
+                }
+            });
         })
     })
 })

@@ -56,7 +56,7 @@
                             class="border rounded mt-4 p-2 font-semibold text-white bg-green-500 hover:bg-green-600 focus:bg-green-700"
                             @click="activateKolloquium(selectedKolloquium)"
                         >
-                            Aktivieren
+                            Kolloquium Starten
                         </button>
                         <n-link :to="'/abgabe/' + selectedKolloquium">
                             <button class="border rounded mt-4 p-2 font-semibold text-white bg-blue-500 hover:bg-blue-600 focus:bg-blue-700">
