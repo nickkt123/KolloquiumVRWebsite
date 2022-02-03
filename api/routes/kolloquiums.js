@@ -44,6 +44,10 @@ function removeDangerousSymbols(fname) {
     // advanced trim
     fname = fname.replace(/\.$/, "");
 
+    // remove blank spaces because it breaks paths
+    // TODO: Make it so blank spaces do not breka paths anymore
+    fname = fname.replaceAll(' ', '_');
+
     // forbidden filenames
     if (fname.match(/^(CON|PRN|AUX|NUL|COM1|COM2|COM3|COM4|COM5|COM6|COM7|COM8|COM9|LPT1|LPT2|LPT3|LPT4|LPT5|LPT6|LPT7|LPT8|LPT9)(\..+)?$/)) {
         fname = `_${fname}`;
@@ -422,17 +426,43 @@ router.use('/submitAbgabe', (req, res) => {
 // activate Kolloquium
 router.use('/activateKolloquium', (req, res) => {
     let { kolloquium } = req.body
-    console.log('Activate ' + kolloquium)
+    let safeKolloquium = removeDangerousSymbols(kolloquium)
+    console.log('Activate ' + safeKolloquium)
     // Remove the contents of the mod folder and move the .pak folders to the mod folder 
-    exec('echo Remove the contents of the mod folder and move the .pak folders to the mod folder',
-    function (error, stdout, stderr) {
-        console.log('stdout: ' + stdout);
-        if (!isEmpty(stderr)){
-            console.log('stderr: ' + stderr);
+    fs.rmSync(pakDirectory, { recursive: true, force: true });
+    fs.mkdir(pakDirectory, function(err) {
+        if (err) {
+            console.error(err);
+            return res.json({
+                success: false,
+                message: err
+            })
         }
-        if (error !== null) {
-            console.log('exec error: ' + error);
-        }
+        let packagedModsPath = resolve(path.join(kolloquiumDirectory, safeKolloquium, 'Mods'))
+        fs.readdir(packagedModsPath, (err, files) => {
+            if(err) {
+                console.error(err);
+                return res.json({
+                    success: false,
+                    message: err
+                })
+            }
+            const zipFiles = files.filter(file => {
+                return path.extname(file).toLowerCase() === '.zip';
+            })
+            zipFiles.forEach(zipFile => {
+                let abgabeName = path.parse(zipFile).name
+                extract(path.join(packagedModsPath, zipFile), { dir: path.join(pakDirectory, abgabeName) }, err => {
+                    if (err) {
+                        console.error(err);
+                        return res.json({
+                            success: false,
+                            message: err
+                        })
+                    }
+                })
+            })
+        })
     })
 })
 
