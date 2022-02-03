@@ -11,6 +11,7 @@ const kolloquiumDirectory = '../Kolloquiums'
 const modDirectory = 'C:/Users/Nick/Documents/UnrealEngine/Projects/KolloquiumVR/Mods'
 const pakDirectory = 'C:/Users/Nick/Documents/UnrealPackagedGames/KolloquiumVR/WindowsNoEditor/KolloquiumVR/Mods'
 const editorFile = 'C:/Users/Nick/Documents/UnrealEngine/Projects/KolloquiumVR/Saved/Config/Windows/Editor.ini'
+const engineFile = 'C:/Users/Nick/Documents/UnrealEngine/Projects/KolloquiumVR/Config/DefaultEngine.ini'
 
 
 function getDirectories(path) {
@@ -368,49 +369,69 @@ router.use('/submitAbgabe', (req, res) => {
                         }
                         const ModFolderRegex = new RegExp('ModFolder=.*', 'i');
                         const FilePathRegex = new RegExp('FilePath=.*', 'i');
-                        const replaceOptions = {
+                        const editorReplaceOptions = {
                             files: editorFile,
                             from: [ModFolderRegex, FilePathRegex],
                             to: ['ModFolder=' + mod_folder_name, 'FilePath=' + resolve(datasmithAbgabeDirectory + '/' + datasmithFiles[0])]
                         };
-                        replace(replaceOptions, (error, results) => {
+                        replace(editorReplaceOptions, (error, results) => {
                             if (error) {
                             return console.error('Error occurred:', error);
                             }
-                            console.log('Replacement results:', results);
-                            
-                            // Remove old content in Mod folder
-                            fs.rmSync(path.join(newAbgabeDirectory, 'Content'), { recursive: true, force: true });
-                            fs.mkdir(path.join(newAbgabeDirectory, 'Content'), function(err) {
-                                if (err) {
-                                    console.error(err);
-                                    return res.json({
-                                        success: false,
-                                        message: err
-                                    })
+
+                            const startupMapRegex = new RegExp('EditorStartupMap=.*', 'i');
+                            const engineReplaceOptions = {
+                                files: engineFile,
+                                from: startupMapRegex,
+                                to: 'EditorStartupMap=/' + mod_folder_name + '/AbgabeLevel.AbgabeLevel'
+                            };
+                            replace(engineReplaceOptions, (error, results) => {
+                                if (error) {
+                                return console.error('Error occurred:', error);
                                 }
                             
-                                // Run the python script that starts the unreal engine with the editor utility... 
-                                exec('C:\\Users\\Nick\\Documents\\UnrealEngine\\Engine\\Binaries\\Win64\\UE4Editor-Cmd.exe KolloquiumVR -ExecutePythonScript="C:\\Users\\Nick\\Documents\\UnrealEngine\\Projects\\KolloquiumVR\\Scripts\\ImportDatasmithCommandlet.py"',
-                                function (error, stdout, stderr) {
-                                    if (!isEmpty(stderr)){
-                                        console.log('stderr: ' + stderr);
+                                // Remove old content in Mod folder
+                                fs.rmSync(path.join(newAbgabeDirectory, 'Content'), { recursive: true, force: true });
+                                fs.mkdir(path.join(newAbgabeDirectory, 'Content'), function(err) {
+                                    if (err) {
+                                        console.error(err);
+                                        return res.json({
+                                            success: false,
+                                            message: err
+                                        })
                                     }
-                                    if (error !== null) {
-                                        console.log('exec error: ' + error);
-                                    }
-
-                                    // Run the automation script that packages the mod
-                                    exec('C:\\Users\\Nick\\Documents\\UnrealEngine\\Engine\\Build\\BatchFiles\\RunUAT.bat PackageUGC -Project=C:/Users/Nick/Documents/UnrealEngine/Projects/KolloquiumVR/KolloquiumVR.uproject -PluginPath=C:/Users/Nick/Documents/UnrealEngine/Projects/KolloquiumVR/Mods/' + mod_folder_name + '/' + mod_folder_name + '.uplugin -basedonreleaseversion=KolloquiumVR_v1 -StagingDirectory=' + resolve(path.join(kolloquiumDirectory, safeKolloquium, 'Mods')) + ' -nocompile',
-                                    function (error, stdout, stderr) {
-                                        if (!isEmpty(stderr)){
-                                            console.log('stderr: ' + stderr);
-                                        }
-                                        if (error !== null) {
-                                            console.log('exec error: ' + error);
+                                    fs.copyFile(path.join(newAbgabeDirectory, 'AbgabeLevel.umap'), path.join(newAbgabeDirectory, 'Content', 'AbgabeLevel.umap'), function(err) {
+                                        // Run the python script that starts the unreal engine with the editor utility...
+                                        if (err) {
+                                            console.error(err);
+                                            return res.json({
+                                                success: false,
+                                                message: err
+                                            })
                                         }
 
-                                        // Run the automation script that packages the mod
+                                        exec('C:\\Users\\Nick\\Documents\\UnrealEngine\\Engine\\Binaries\\Win64\\UE4Editor-Cmd.exe KolloquiumVR -ExecutePythonScript="C:\\Users\\Nick\\Documents\\UnrealEngine\\Projects\\KolloquiumVR\\Scripts\\ImportDatasmithCommandlet.py"',
+                                        function (error, stdout, stderr) {
+                                            if (!isEmpty(stderr)){
+                                                console.log('stderr: ' + stderr);
+                                            }
+                                            if (error !== null) {
+                                                console.log('exec error: ' + error);
+                                            }
+
+                                            // Run the automation script that packages the mod
+                                            exec('C:\\Users\\Nick\\Documents\\UnrealEngine\\Engine\\Build\\BatchFiles\\RunUAT.bat PackageUGC -Project=C:/Users/Nick/Documents/UnrealEngine/Projects/KolloquiumVR/KolloquiumVR.uproject -PluginPath=C:/Users/Nick/Documents/UnrealEngine/Projects/KolloquiumVR/Mods/' + mod_folder_name + '/' + mod_folder_name + '.uplugin -basedonreleaseversion=KolloquiumVR_v1 -StagingDirectory=' + resolve(path.join(kolloquiumDirectory, safeKolloquium, 'Mods')) + ' -nocompile',
+                                            function (error, stdout, stderr) {
+                                                if (!isEmpty(stderr)){
+                                                    console.log('stderr: ' + stderr);
+                                                }
+                                                if (error !== null) {
+                                                    console.log('exec error: ' + error);
+                                                }
+
+                                                // Run the automation script that packages the mod
+                                            });
+                                        });
                                     });
                                 });
                             });
