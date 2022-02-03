@@ -12,6 +12,7 @@ const modDirectory = 'C:/Users/Nick/Documents/UnrealEngine/Projects/KolloquiumVR
 const pakDirectory = 'C:/Users/Nick/Documents/UnrealPackagedGames/KolloquiumVR/WindowsNoEditor/KolloquiumVR/Mods'
 const editorFile = 'C:/Users/Nick/Documents/UnrealEngine/Projects/KolloquiumVR/Saved/Config/Windows/Editor.ini'
 const engineFile = 'C:/Users/Nick/Documents/UnrealEngine/Projects/KolloquiumVR/Config/DefaultEngine.ini'
+const templateLevel = 'C:/Users/Nick/Documents/UnrealEngine/Projects/KolloquiumVR/Content/Maps/TemplateLevel.umap'
 
 
 function getDirectories(path) {
@@ -378,12 +379,13 @@ router.use('/submitAbgabe', (req, res) => {
                             if (error) {
                             return console.error('Error occurred:', error);
                             }
-
+                            
+                            let levelName = mod_folder_name + '_Level'
                             const startupMapRegex = new RegExp('EditorStartupMap=.*', 'i');
                             const engineReplaceOptions = {
                                 files: engineFile,
                                 from: startupMapRegex,
-                                to: 'EditorStartupMap=/' + mod_folder_name + '/AbgabeLevel.AbgabeLevel'
+                                to: 'EditorStartupMap=/' + mod_folder_name + '/'+ levelName + '.' + levelName
                             };
                             replace(engineReplaceOptions, (error, results) => {
                                 if (error) {
@@ -400,7 +402,7 @@ router.use('/submitAbgabe', (req, res) => {
                                             message: err
                                         })
                                     }
-                                    fs.copyFile(path.join(newAbgabeDirectory, 'AbgabeLevel.umap'), path.join(newAbgabeDirectory, 'Content', 'AbgabeLevel.umap'), function(err) {
+                                    fs.copyFile(templateLevel, path.join(newAbgabeDirectory, 'Content', levelName + '.umap'), function(err) {
                                         // Run the python script that starts the unreal engine with the editor utility...
                                         if (err) {
                                             console.error(err);
