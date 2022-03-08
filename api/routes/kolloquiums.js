@@ -427,20 +427,41 @@ router.use('/submitAbgabe', (req, res) => {
                                         function (error, stdout, stderr) {
                                             if (!isEmpty(stderr)){
                                                 console.log('stderr: ' + stderr);
+                                                return res.json({
+                                                    success: false,
+                                                    message: stderr
+                                                })
                                             }
                                             if (error !== null) {
                                                 console.log('exec error: ' + error);
+                                                return res.json({
+                                                    success: false,
+                                                    message: error
+                                                })
                                             }
-
+                                            console.log('Imported Datasmithfile successfully');
                                             // Run the automation script that packages the mod
                                             exec(runUAT + ' PackageUGC -Project=' + kolloquiumVRuproject + ' -PluginPath=' + modDirectory +'/' + mod_folder_name + '/' + mod_folder_name + '.uplugin -basedonreleaseversion=KolloquiumVR_v1 -StagingDirectory=' + resolve(path.join(kolloquiumDirectory, safeKolloquium, 'Mods')) + ' -nocompile',
                                             function (error, stdout, stderr) {
                                                 if (!isEmpty(stderr)){
                                                     console.log('stderr: ' + stderr);
+                                                    return res.json({
+                                                        success: false,
+                                                        message: stderr
+                                                    })
                                                 }
                                                 if (error !== null) {
                                                     console.log('exec error: ' + error);
+                                                    return res.json({
+                                                        success: false,
+                                                        message: error
+                                                    })
                                                 }
+                                                console.log('Packaged UGC successfully');
+                                                return res.json({
+                                                    success: true,
+                                                    message: 'Packaged UGC successfully'
+                                                });
                                             });
                                         });
                                     });
