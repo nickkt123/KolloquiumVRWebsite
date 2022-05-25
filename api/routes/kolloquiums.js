@@ -8,8 +8,9 @@ const {resolve} = require("path");
 const replace = require('replace-in-file');
 
 const kolloquiumDirectory = '../Kolloquiums'
-const engineDirectory = 'C:/Users/Nick/Documents/UnrealEngine'
-const packagedGame = 'C:/Users/Nick/Documents/UnrealPackagedGames/KolloquiumVR'
+const engineDirectory = 'D:/UnrealEngine'
+const packagedGame = 'D:/KolloquiumVR/PackagedGame'
+const nDisplayLauncher = engineDirectory + '/Projects/KolloquiumVR/Scripts/launch.bat'
 
 const engineINI =            engineDirectory + '/Projects/KolloquiumVR/Config/DefaultEngine.ini'
 const editorINI =            engineDirectory + '/Projects/KolloquiumVR/Saved/Config/Windows/Editor.ini'
@@ -402,7 +403,9 @@ router.use('/submitAbgabe', (req, res) => {
                                 if (error) {
                                 return console.error('Error occurred:', error);
                                 }
-                            
+                                
+                                console.log('Replaced mod folder and file path in .ini files')
+
                                 // Remove old content in Mod folder
                                 fs.rmSync(path.join(newAbgabeDirectory, 'Content'), { recursive: true, force: true });
                                 fs.mkdir(path.join(newAbgabeDirectory, 'Content'), function(err) {
@@ -515,8 +518,8 @@ router.use('/activateKolloquium', (req, res) => {
                     }
                 })
             })
-
-            exec(kolloquiumVRexe,
+            
+            exec(nDisplayLauncher,
             function (error, stdout, stderr) {
                 if (!isEmpty(stderr)){
                     console.log('stderr: ' + stderr);
